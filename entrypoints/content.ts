@@ -1,19 +1,12 @@
 import { TreeObject } from "../types/types";
+import { sendMessage, onMessage } from "webext-bridge/content-script";
 
 export default defineContentScript({
   matches: ["*://*/*"],
   runAt: "document_end",
-  main() {
+  async main() {
     console.log("Hello content.");
-    browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
-      if (request.message === "hi") {
-        console.log("Received message from popup:", request.message);
-        console.log("Received message from popup:", request.count);
 
-        // Process the received data and optionally send a response
-        // sendResponse({ message: 'Received and processed!' });
-      }
-    });
     function getDomTree(node: Document | HTMLElement | ChildNode) {
       const treeObject: TreeObject = {
         nodeName: node.nodeName,
@@ -46,7 +39,17 @@ export default defineContentScript({
       domTree.children[1].children[2].children[1].children[9].children[1]
         .children;
 
-    browser.runtime.sendMessage({ message: "hey", tree: transVal });
+    // browser.runtime.sendMessage({ message: "hey", tree: transVal });
+    onMessage("count", async (message) => {
+      console.log("Received message from popup:", message);
+      const res = await sendMessage(
+        "get-selection",
+        { message: "hey", tree: JSON.stringify(transVal) },
+        "background"
+      );
+      console.log(res, "res");
+    });
+
     console.log(transVal, "transVal");
     transVal.forEach((el: TreeObject) => {
       console.log(el.nodeStyle);
